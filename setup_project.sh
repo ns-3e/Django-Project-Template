@@ -62,6 +62,31 @@ volumes:
   postgres_data:
 EOL
 
+# Create the templates directory and add sample components
+mkdir -p $PROJECT_NAME/templates
+
+cat <<EOL > $PROJECT_NAME/templates/header.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}$PROJECT_NAME{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <h1>Welcome to $PROJECT_NAME</h1>
+    </header>
+EOL
+
+cat <<EOL > $PROJECT_NAME/templates/footer.html
+<footer>
+    <p>&copy; 2024 $PROJECT_NAME</p>
+</footer>
+</body>
+</html>
+EOL
+
 # Create commands.md
 cat <<EOL > commands.md
 # Commands for $PROJECT_NAME
@@ -75,6 +100,11 @@ source venv/bin/activate
 \`\`\`
 docker-compose up
 \`\`\`
+
+## Database Details
+- **Database Name**: $DB_NAME
+- **Database User**: $DB_USER
+- **Database Password**: $DB_PASSWORD
 
 ## Other commands
 - To build Docker images: \`docker-compose build\`
