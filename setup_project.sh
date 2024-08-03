@@ -13,7 +13,7 @@ django-admin startproject $PROJECT_NAME
 cd $PROJECT_NAME || exit
 
 # Create Python virtual environment
-python -m venv venv
+python3 -m venv venv
 
 # Create requirements.txt file
 echo "Django>=4.0,<5.0" > requirements.txt
@@ -66,41 +66,17 @@ apps=("accounts" "billing" "products" "analytics" "support" "notifications" "adm
 
 for app in "${apps[@]}"; do
     django-admin startapp $app
-done
 
-# Create static and templates directories
-mkdir -p $PROJECT_NAME/static/css
-mkdir -p $PROJECT_NAME/static/js
-mkdir -p $PROJECT_NAME/static/images
-mkdir -p $PROJECT_NAME/templates
-
-# Add Bootstrap CSS and JS to static folder
-curl -o $PROJECT_NAME/static/css/bootstrap.min.css https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css
-curl -o $PROJECT_NAME/static/js/bootstrap.min.js https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js
-
-# Basic view and template for each app
-for app in "${apps[@]}"; do
-    mkdir -p $PROJECT_NAME/$app/templates/$app
-
-    cat <<EOL > $PROJECT_NAME/$app/views.py
+    # Create basic views.py
+    cat <<EOL > $app/views.py
 from django.shortcuts import render
 
 def home(request):
     return render(request, '$app/home.html')
-
 EOL
 
-    cat <<EOL > $PROJECT_NAME/$app/templates/$app/home.html
-{% extends "base.html" %}
-
-{% block title %}${app^}{% endblock %}
-
-{% block content %}
-<h2>Welcome to the ${app^} app!</h2>
-{% endblock %}
-EOL
-
-    cat <<EOL > $PROJECT_NAME/$app/urls.py
+    # Create basic urls.py
+    cat <<EOL > $app/urls.py
 from django.urls import path
 from . import views
 
@@ -109,7 +85,32 @@ urlpatterns = [
     path('', views.home, name='home'),
 ]
 EOL
+
+    # Create templates directory for the app
+    mkdir -p $app/templates/$app
+
+    # Create a basic home.html template
+    APP_NAME=$(echo $app | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+    cat <<EOL > $app/templates/$app/home.html
+{% extends "base.html" %}
+
+{% block title %}${APP_NAME}{% endblock %}
+
+{% block content %}
+<h2>Welcome to ${APP_NAME}!</h2>
+{% endblock %}
+EOL
 done
+
+# Create static and templates directories
+mkdir -p static/css
+mkdir -p static/js
+mkdir -p static/images
+mkdir -p templates
+
+# Add Bootstrap CSS and JS to static folder
+curl -o static/css/bootstrap.min.css https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css
+curl -o static/js/bootstrap.min.js https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js
 
 # Update the main urls.py file to include the apps
 cat <<EOL > $PROJECT_NAME/urls.py
@@ -130,23 +131,27 @@ EOL
 
 # Update settings.py to include the templates and static directories
 SETTINGS_FILE="$PROJECT_NAME/settings.py"
+
+# Add TEMPLATES DIRS setting
 sed -i "/TEMPLATES = \[/a \ \ \ \ 'DIRS': [os.path.join(BASE_DIR, 'templates')]," $SETTINGS_FILE
+
+# Add STATICFILES DIRS setting
 sed -i "/STATIC_URL = '\/static\/'/a \ \ \ \ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]" $SETTINGS_FILE
 
 # Update base.html to include Bootstrap
-cat <<EOL > $PROJECT_NAME/templates/base.html
+cat <<EOL > templates/base.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}My SaaS Platform{% endblock %}</title>
+    <title>{% block title %}$PROJECT_NAME{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="#">My SaaS Platform</a>
+            <a class="navbar-brand" href="#">$PROJECT_NAME</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav">
                     <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
@@ -160,7 +165,7 @@ cat <<EOL > $PROJECT_NAME/templates/base.html
     </main>
     <footer class="bg-light py-3 mt-4">
         <div class="container text-center">
-            <p>&copy; 2024 My SaaS Platform</p>
+            <p>&copy; 2024 $PROJECT_NAME</p>
         </div>
     </footer>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
@@ -182,12 +187,43 @@ source venv/bin/activate
 docker-compose up
 \`\`\`
 
+## Starting the Django Development Server
+\`\`\`
+python3 manage.py runserver
+\`\`\`
+
+## Creating New Django Apps
+\`\`\`
+python3 manage.py startapp <app_name>
+\`\`\`
+
+## Applying Migrations
+\`\`\`
+python3 manage.py makemigrations
+python3 manage.py migrate
+\`\`\`
+
+## Creating Superuser
+\`\`\`
+python3 manage.py createsuperuser
+\`\`\`
+
+## Collecting Static Files
+\`\`\`
+python3 manage.py collectstatic
+\`\`\`
+
+## Running Tests
+\`\`\`
+python3 manage.py test
+\`\`\`
+
 ## Database Details
 - **Database Name**: $DB_NAME
 - **Database User**: $DB_USER
 - **Database Password**: $DB_PASSWORD
 
-## Other commands
+## Other Commands
 - To build Docker images: \`docker-compose build\`
 - To stop Docker: \`docker-compose down\`
 \`\`\`
